@@ -1,5 +1,4 @@
 import { Webhook } from "svix";
-import mongoose from "mongoose";
 import connectDB from "../configs/db.js";
 import User from "../models/User.js";
 
