@@ -13,13 +13,12 @@ const clerkWebHooks = async (req, res) => {
 
     console.log("Webhook received:", req.body);
 
-    await wh.verify(JSON.stringify(req.body), headers);
-
-    const { data, type } = req.body;
+    const evt = wh.verify(JSON.stringify(req.body), headers);
+    const { data, type } = evt;
 
     const userData = {
       _id: data.id,
-      email: data.email_addresses[0].email_address,
+      email: data.email_addresses?.[0]?.email_address || "",
       username: `${data.first_name} ${data.last_name}`,
       image: data.image_url,
     };
@@ -29,12 +28,17 @@ const clerkWebHooks = async (req, res) => {
         await User.create(userData);
         console.log("User Created in DB:", userData);
         break;
+
       case "user.updated":
         await User.findByIdAndUpdate(data.id, userData);
+        console.log("User Updated in DB:", userData);
         break;
+
       case "user.deleted":
         await User.findByIdAndDelete(data.id);
+        console.log("User Deleted from DB:", data.id);
         break;
+
       default:
         console.log("No matching webhook type");
         break;
@@ -42,7 +46,7 @@ const clerkWebHooks = async (req, res) => {
 
     res.status(200).json({ success: true, message: "Webhook received" });
   } catch (error) {
-    console.log("Webhook Error:", error.message);
+    console.error("Webhook Error:", error.message);
     res.status(400).json({ success: false, message: error.message });
   }
 };
