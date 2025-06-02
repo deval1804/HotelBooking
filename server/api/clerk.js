@@ -1,9 +1,11 @@
 import { Webhook } from "svix";
+import mongoose from "mongoose";
 import connectDB from "../configs/db.js";
-import User from "../models/User.js";
+import User from "../models/user.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+  if (req.method !== "POST")
+    return res.status(405).json({ message: "Method Not Allowed" });
 
   await connectDB();
 
