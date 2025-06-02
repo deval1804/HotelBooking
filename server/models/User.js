@@ -1,31 +1,16 @@
-// import mongoose from "mongoose";
-
-// const userSchema = mongoose.Schema({
-//     _id: {type: String, required: true},
-//     username: {type: String, required: true},
-//     email: {type: String, required: true},
-//     image: {type: String, required: true},
-//     role: {type: String,enum: ["user", "hotelOwner"], default: "user"},
-//     recentSearchedCities: [{type: String, required: true}],
-// },{timeStamps: true}
-// );
-
-
-// const User = mongoose.model("User", userSchema);
-
-// export default User;
-
 import mongoose from "mongoose";
 
 const userSchema = mongoose.Schema({
-  _id: { type: String, required: true },
+  clerkId: { type: String, required: true, unique: true }, // Changed _id to clerkId
   username: { type: String, required: true },
-  email: { type: String, required: true },
-  image: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  image: { type: String },
+  firstName: { type: String }, // Added new fields
+  lastName: { type: String },
   role: { type: String, enum: ["user", "hotelOwner"], default: "user" },
   recentSearchedCities: [{ type: String }]
-}, { timestamps: true }); // Fixed typo: timesStamp → timestamps
+}, { timestamps: true });
 
-const User = mongoose.model("User", userSchema); // Fixed variable name
+const User = mongoose.model("User", userSchema);
 
 export default User;
