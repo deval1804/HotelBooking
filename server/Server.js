@@ -1,79 +1,56 @@
-import express from 'express';
-import mongoose from 'mongoose';
-import { Webhook } from 'svix';
-import User from './models/User.js';
-import dotenv from 'dotenv';
+// import express from "express";
+// import "dotenv/config";
+// import cors from "cors";
+// import connectDB from "./configs/db.js";
+// import clerkWebHooks from "./controllers/clerkWebhooks.js";
 
-// Initialize Express app
+// // Connect DB
+// connectDB();
+
+// // Initialize Express
+// const app = express();
+// app.use(cors());
+// app.use(express.json());  // 👈 Yeh pehle hona chahiye har API ke liye
+
+// // Webhook endpoint
+// app.post("/api/clerk", clerkWebHooks);
+
+// // Test route
+// app.get("/", (req, res) => res.send("API is working"));
+
+// // Port config
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });
+
+
+import express from "express";
+import "dotenv/config";
+import cors from "cors";
+import connectDB from "./configs/db.js";
+import clerkWebHooks from "./controllers/clerkWebhooks.js";
+
+// Initialize
+connectDB();
 const app = express();
-dotenv.config();
 
-// Middleware to get raw body for webhook verification
-app.use(express.json({
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}));
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB Connection Error:', err));
+// Clerk Webhook (Must use raw body parser)
+app.post(
+    "/api/clerk",
+    express.raw({ type: 'application/json' }), // Critical for Clerk
+    clerkWebHooks
+);
 
-// Webhook Endpoint
-app.post('/api/clerk', async (req, res) => {
-  try {
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    const payload = wh.verify(req.rawBody, req.headers);
-    
-    console.log("Received Clerk webhook:", payload.type);
+// Test Route
+app.get("/", (req, res) => res.send("API is working"));
 
-    switch (payload.type) {
-      case 'user.created':
-        const emailObj = payload.data.email_addresses.find(
-          email => email.id === payload.data.primary_email_address_id
-        );
-        
-        const newUser = new User({
-          clerkId: payload.data.id,
-          username: payload.data.username || emailObj.email_address.split('@')[0],
-          email: emailObj.email_address,
-          firstName: payload.data.first_name,
-          lastName: payload.data.last_name,
-          image: payload.data.image_url,
-          role: 'user'
-        });
-
-        await newUser.save();
-        console.log("Created new user:", newUser);
-        break;
-
-      case 'user.updated':
-        await User.findOneAndUpdate(
-          { clerkId: payload.data.id },
-          {
-            username: payload.data.username,
-            firstName: payload.data.first_name,
-            lastName: payload.data.last_name,
-            image: payload.data.image_url
-          }
-        );
-        break;
-
-      case 'user.deleted':
-        await User.findOneAndDelete({ clerkId: payload.data.id });
-        break;
-    }
-
-    res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("Webhook error:", err);
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Start Server on PORT 5000
-const PORT = process.env.PORT || 5000; // Changed from 10000 to 5000
+// Start Server
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
